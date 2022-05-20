@@ -3,7 +3,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired
 from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
+# from flask_migrate import Migrate
 from datetime import datetime
 from werkzeug.security import generate_password_hash,check_password_hash
 
@@ -11,8 +11,15 @@ from werkzeug.security import generate_password_hash,check_password_hash
 #Create a Flask Instance
 app = Flask(__name__)
 
+# Old SQLite DB
 # Add Database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///user.db'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///user.db'
+
+# New MySQL DB
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysqlexit://root:password123@localhost/our_users'
+
+
+
 
 
 # Secret Key
@@ -20,7 +27,7 @@ app.config['SECRET_KEY'] = "LavenderKirigha"
 
 # Initialized Database
 db = SQLAlchemy(app)
-migrate = Migrate(app, db)
+# migrate = Migrate(app, db)
 
 
 
@@ -32,6 +39,20 @@ class Users(db.Model):
     favorite_color = db.Column(db.String(120))
     email = db.Column(db.String(200), nullable=False, unique=True)
     date_added = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Do Some password stuff
+    password_hash = db.Column(db.String(128))
+
+    @property
+    def password(self):
+        raise AttributeError('password is not readable attribute')
+    @password.setter
+    def password(self,password):
+        self.password_hash = generate_password_hash(password)
+        
+    def verify_password(self,password):
+        return check_password_hash(self.password_hash,password)
+
 
 
     # Create a String
