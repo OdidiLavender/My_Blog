@@ -1,0 +1,13 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-Secondary">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/" style="font-family: 'Pacifico', cursive;font-size: xx-large;">Blog Kali</a>
+        
+            <ul>
+                <a href="#" type="button" class="btn btn-info" style="font-family: 'Pacifico', cursive;">Log-In</a>
+                <a type="button" class="btn btn-outline-info" href="{{ url_for('user', name='Sultan')}}"style="font-family: 'Pacifico', cursive;"> User Profile</a>
+                <a type="button" class="btn btn-outline-info" href="{{ url_for('name')}}"style="font-family: 'Pacifico', cursive;"> Name</a>
+                <a type="button" class="btn btn-outline-info" href="{{ url_for('add_user')}}"style="font-family: 'Pacifico', cursive;"> Add User</a>
+            </ul>
+        
+    </div>
+</nav>
