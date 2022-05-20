@@ -1,9 +1,9 @@
 from flask import Flask,render_template,flash,request
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
-from wtforms.validators import DataRequired
+from wtforms import StringField, SubmitField,PasswordField,BooleanField,ValidationError
+from wtforms.validators import DataRequired,EqualTo,Length
 from flask_sqlalchemy import SQLAlchemy
-# from flask_migrate import Migrate
+from flask_migrate import Migrate
 from datetime import datetime
 from werkzeug.security import generate_password_hash,check_password_hash
 
@@ -13,10 +13,10 @@ app = Flask(__name__)
 
 # Old SQLite DB
 # Add Database
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///user.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///user.db'
 
 # New MySQL DB
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysqlexit://root:password123@localhost/our_users'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysqlexit://root:password123@localhost/our_users'
 
 
 
@@ -27,7 +27,7 @@ app.config['SECRET_KEY'] = "LavenderKirigha"
 
 # Initialized Database
 db = SQLAlchemy(app)
-# migrate = Migrate(app, db)
+migrate = Migrate(app, db)
 
 
 
@@ -82,6 +82,8 @@ class UserForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired()])
     favorite_color = StringField("Favourite Color")
+    password_hash = PasswordField('Password', validators[DataRequired(), EqualTo('password_hash2', message='Passwords Must Match!')])
+    password_hash2 = PasswordField('Confirm Password',validators=[DataRequired])
     submit  = SubmitField('submit')
 
 # Update Database record
