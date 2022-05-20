@@ -3,7 +3,9 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from datetime import datetime
+from werkzeug.security import generate_password_hash,check_password_hash
 
 
 #Create a Flask Instance
@@ -18,6 +20,7 @@ app.config['SECRET_KEY'] = "LavenderKirigha"
 
 # Initialized Database
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 
 
@@ -26,6 +29,7 @@ db = SQLAlchemy(app)
 class Users(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
+    favorite_color = db.Column(db.String(120))
     email = db.Column(db.String(200), nullable=False, unique=True)
     date_added = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -34,10 +38,29 @@ class Users(db.Model):
     def __repr__(self):
         return '<Name %r>' % self.name
 
+@app.route('/delete/<int:id>')
+def delete(id):
+    user_to_delete = Users.query.get_or_404(id)
+    name = None
+    form = UserForm()
+    try:
+        db.session.delete(user_to_delete)
+        db.session.commit()
+        flash("User deleted successfully!!!")
+        our_users = Users.query.order_by(Users.date_added)
+        return render_template('add_user.html', form=form,name=name,our_users=our_users)
+
+    except:
+        flash("An Error occured when deleting user!!")
+        return render_template('add_user.html', form=form,name=name,our_users=our_users)
+
+
+
 # Create a Form Class
 class UserForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired()])
+    favorite_color = StringField("Favourite Color")
     submit  = SubmitField('submit')
 
 # Update Database record
@@ -50,6 +73,8 @@ def update(id):
 
         name_to_update.name = request.form['name']
         name_to_update.email = request.form['email']
+        name_to_update.favorite_color = request.form['favorite_color']
+
 
         try:
              db.session.commit()
@@ -60,8 +85,8 @@ def update(id):
                 return render_template("update.html", form=form,name_to_update=name_to_update)
 
     else:
-        
-        return render_template("update.html", form=form,name_to_update=name_to_update)
+
+        return render_template("update.html", form=form,name_to_update=name_to_update,id=id)
 
                
 
@@ -86,7 +111,7 @@ def add_user():
     name = None
     form = UserForm()
     if form.validate_on_submit():
-        user = Users.query.filter_by(email=form.email.data).first()
+        user = Users.query.filter_by(email=form.email.data , favorite_color=form.favorite_color.data).first()
         if user is None:
             user = Users(name=form.name.data, email=form.email.data)
             db.session.add(user)
@@ -94,6 +119,7 @@ def add_user():
         name = form.name.data
         form.name.data = ''
         form.email.data = ''
+        form.favorite_color.data= ''
         flash("User Added Successfully!!")
 
 
