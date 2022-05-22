@@ -3,7 +3,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField,PasswordField,BooleanField,ValidationError
 from wtforms.validators import DataRequired,EqualTo,Length
 from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
+# from flask_migrate import Migrate
 from datetime import datetime
 from werkzeug.security import generate_password_hash,check_password_hash
 
@@ -13,10 +13,10 @@ app = Flask(__name__)
 
 # Old SQLite DB
 # Add Database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///user.db'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///user.db'
 
 # New MySQL DB
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysqlexit://root:password123@localhost/our_users'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:abc@localhost/our_users'
 
 
 
@@ -27,7 +27,7 @@ app.config['SECRET_KEY'] = "LavenderKirigha"
 
 # Initialized Database
 db = SQLAlchemy(app)
-migrate = Migrate(app, db)
+# migrate = Migrate(app, db)
 
 
 
@@ -82,8 +82,8 @@ class UserForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired()])
     favorite_color = StringField("Favourite Color")
-    password_hash = PasswordField('Password', validators[DataRequired(), EqualTo('password_hash2', message='Passwords Must Match!')])
-    password_hash2 = PasswordField('Confirm Password',validators=[DataRequired])
+    password_hash = PasswordField('Password', validators=[DataRequired(), EqualTo('password_hash2', message='Passwords Must Match!')])
+    password_hash2 = PasswordField('Confirm Password',validators=[DataRequired()])
     submit  = SubmitField('submit')
 
 # Update Database record
@@ -134,15 +134,18 @@ def add_user():
     name = None
     form = UserForm()
     if form.validate_on_submit():
-        user = Users.query.filter_by(email=form.email.data , favorite_color=form.favorite_color.data).first()
+        user = Users.query.filter_by(email=form.email.data).first()
         if user is None:
-            user = Users(name=form.name.data, email=form.email.data)
+            #Hash password
+            hashed_pw = generate_password_hash(form.password_hash.data, "sha256")
+            user = Users(name=form.name.data, email=form.email.data,favorite_color=form.favorite_color.data, password_hash=hashed_pw)
             db.session.add(user)
             db.session.commit()
         name = form.name.data
         form.name.data = ''
         form.email.data = ''
-        form.favorite_color.data= ''
+        form.favorite_color.data = ''
+        form.password_hash.data = ''
         flash("User Added Successfully!!")
 
 
