@@ -1,11 +1,12 @@
-from flask import Flask,render_template,flash,request
+from flask import Flask,render_template,flash,request,redirect,url_for
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField,PasswordField,BooleanField,ValidationError
 from wtforms.validators import DataRequired,EqualTo,Length
 from flask_sqlalchemy import SQLAlchemy
-# from flask_migrate import Migrate
+from flask_migrate import Migrate
 from datetime import datetime
 from werkzeug.security import generate_password_hash,check_password_hash
+from wtforms.widgets import TextArea
 
 
 #Create a Flask Instance
@@ -27,9 +28,90 @@ app.config['SECRET_KEY'] = "LavenderKirigha"
 
 # Initialized Database
 db = SQLAlchemy(app)
-# migrate = Migrate(app, db)
+migrate = Migrate(app, db)
 
 
+# Create a Blog Post Model
+
+class Posts(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(225))
+    content = db.Column(db.Text)
+    author = db.Column(db.String(225))
+    date_posted = db.Column(db.DateTime, default=datetime.utcnow)
+    slug = db.Column(db.String(225))
+
+# Create a Posts Form
+class PostForm(FlaskForm):
+    title = StringField("Title", validators=[DataRequired()])
+    content = StringField("Content", validators=[DataRequired()], widget=TextArea())
+    author = StringField("Author", validators=[DataRequired()])
+    slug = StringField("Slug", validators=[DataRequired()])
+    submit  = SubmitField('submit')
+
+@app.route('/posts')
+def posts():
+    posts = Posts.query.order_by(Posts.date_posted )
+
+    return render_template('posts.html',posts=posts)
+
+
+
+
+
+
+
+
+
+
+#creating a individual post
+
+@app.route('/posts/<int:id>')
+def post(id):
+    post = Posts.query.get_or_404(id)
+    return render_template('post.html',post=post)
+
+
+
+
+# Add Post Page
+@app.route('/add-post', methods=['GET', 'POST'])
+def add_post():
+    form = PostForm()
+
+    if form.validate_on_submit():
+        post = Posts(title=form.title.data, content=form.content.date, author=form.author.data, slug=form.slug.data)
+        # Clear The Form
+        form.title.data = ''
+        form.content.data = ''
+        form.author.data = ''
+        form.slug.data = ''
+
+
+        # Add post data to database
+        db.session.add(post)
+        db.session.commit()
+
+
+        # Return a Message
+        flash("Blog Post Submitted Successfully!")
+    # Redirect to the webpage
+    return render_template("add_post.html", form=form) 
+
+@app.route('/posts/edit/<int:id>',methods=['GET','POST'])
+def edit_post(id):
+    post = Posts.query.get_or_404(id)
+    form = PostForm()
+    if form.validate_on_submit():
+        post.title = form.title.data
+        post.author = form.author.data
+        post.slug = form.slug.data
+        post.content = form.content.data
+        #Updating the database
+        db.session.add(post)
+        db.session.commit()
+        flash('post has been updated')
+        return redirect(url_for('post',id=post.id))
 
 
 # Create Model
@@ -42,6 +124,8 @@ class Users(db.Model):
 
     # Do Some password stuff
     password_hash = db.Column(db.String(128))
+
+
 
     @property
     def password(self):
